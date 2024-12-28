@@ -1,25 +1,20 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import * as bcrypt from 'bcrypt';
-import * as jsonfile from 'jsonfile';
-import * as path from 'path';
+import { UserService } from 'src/users/users.service';
 
 @Injectable()
 export class AuthService {
-  private dataFile = path.join(__dirname, '..', '..', 'data.json');
+  constructor(
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  constructor(private jwtService: JwtService) {}
-
-  // Đăng nhập
   async login(username: string, password: string) {
-    const { users } = await jsonfile.readFile(this.dataFile);
-    const user = users.find((u) => u.username === username);
-
-    if (!user || user.password !== password) {
-      throw new UnauthorizedException('Sai tài khoản hoặc mật khẩu');
+    const user = await this.userService.validateUser(username, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
     }
-
-    const payload = { username: user.username, role: user.role, sub: user.id };
+    const payload = { username: user.username, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
     };

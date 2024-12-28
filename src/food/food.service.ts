@@ -1,23 +1,57 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
-import * as jsonfile from 'jsonfile';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Food, FoodDocument } from './schemas/food.schema';
 
 @Injectable()
 export class FoodService {
-  private dataFile = 'data.json';
+  constructor(@InjectModel(Food.name) private foodModel: Model<FoodDocument>) {}
 
-  async getAllFoods() {
-    const { foods } = await jsonfile.readFile(this.dataFile);
-    return foods;
+  // Thêm món ăn
+  async createFood(
+    name: string,
+    description: string,
+    price: number,
+  ): Promise<Food> {
+    const newFood = new this.foodModel({ name, description, price });
+    return newFood.save();
   }
 
-  async addFood(food: { name: string; description: string }, role: string) {
-    if (role !== 'admin') {
-      throw new ForbiddenException('Chỉ admin mới được thêm món ăn');
+  // Lấy danh sách món ăn
+  async findAll(): Promise<Food[]> {
+    return this.foodModel.find().exec();
+  }
+
+  // Lấy chi tiết món ăn
+  async findOneById(id: string): Promise<Food> {
+    const food = await this.foodModel.findById(id).exec();
+    if (!food) {
+      throw new NotFoundException('Food not found');
     }
-    const data = await jsonfile.readFile(this.dataFile);
-    const newFood = { id: Date.now(), ...food };
-    data.foods.push(newFood);
-    await jsonfile.writeFile(this.dataFile, data);
-    return newFood;
+    return food;
+  }
+
+  // Sửa món ăn
+  async updateFood(
+    id: string,
+    name: string,
+    description: string,
+    price: number,
+  ): Promise<Food> {
+    const updatedFood = await this.foodModel
+      .findByIdAndUpdate(id, { name, description, price }, { new: true })
+      .exec();
+    if (!updatedFood) {
+      throw new NotFoundException('Food not found');
+    }
+    return updatedFood;
+  }
+
+  // Xóa món ăn
+  async deleteFood(id: string): Promise<void> {
+    const result = await this.foodModel.findByIdAndDelete(id).exec();
+    if (!result) {
+      throw new NotFoundException('Food not found');
+    }
   }
 }
