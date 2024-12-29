@@ -7,11 +7,16 @@ import {
   Body,
   Param,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import { FoodService } from './food.service';
 import { RolesGuard } from '../guards/roles.guard';
 import { Role } from '../decorators/role.decorator';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateFoodDto } from './Dto/create-food.dto';
+import { diskStorage } from 'multer';
 
 @Controller('food')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20,10 +25,26 @@ export class FoodController {
 
   // Thêm món ăn (cả admin và user đều có thể thêm)
   @Post()
+  @UseInterceptors(
+    FileInterceptor('image', {
+      storage: diskStorage({
+        destination: './uploads/foods', // Thư mục lưu ảnh
+        filename: (req, file, callback) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          const extension = file.originalname.split('.').pop();
+          const filename = `${file.fieldname}-${uniqueSuffix}.${extension}`;
+          callback(null, filename);
+        },
+      }),
+    }),
+  )
   async createFood(
-    @Body() body: { name: string; description: string; price: number },
+    @Body() createFoodDto: CreateFoodDto,
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.foodService.createFood(body.name, body.description, body.price);
+    const imageUrl = `/uploads/foods/${file.filename}`;
+    return this.foodService.createFood({ ...createFoodDto, image: imageUrl });
   }
 
   // Lấy danh sách món ăn (cả admin và user đều có thể xem)

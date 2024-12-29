@@ -1,19 +1,24 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Food, FoodDocument } from './schemas/food.schema';
+import { CreateFoodDto } from './Dto/create-food.dto';
 
 @Injectable()
 export class FoodService {
   constructor(@InjectModel(Food.name) private foodModel: Model<FoodDocument>) {}
 
   // Thêm món ăn
-  async createFood(
-    name: string,
-    description: string,
-    price: number,
-  ): Promise<Food> {
-    const newFood = new this.foodModel({ name, description, price });
+  async createFood(createFoodDto: CreateFoodDto): Promise<Food> {
+    const existingFood = await this.findByName(createFoodDto.name);
+    if (existingFood) {
+      throw new ConflictException('Món ăn này đã tồn tại');
+    }
+    const newFood = new this.foodModel(createFoodDto);
     return newFood.save();
   }
 
@@ -22,6 +27,9 @@ export class FoodService {
     return this.foodModel.find().exec();
   }
 
+  async findByName(name: string): Promise<Food | null> {
+    return this.foodModel.findOne({ name }).exec();
+  }
   // Lấy chi tiết món ăn
   async findOneById(id: string): Promise<Food> {
     const food = await this.foodModel.findById(id).exec();

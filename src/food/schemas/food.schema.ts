@@ -14,6 +14,9 @@ export class Food {
   @Prop({ required: true })
   price: number;
 
+  @Prop({ required: true })
+  image: string;
+
   @Prop({ default: Date.now })
   createdAt: Date;
 }
