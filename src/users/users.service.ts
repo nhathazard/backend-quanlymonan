@@ -38,4 +38,16 @@ export class UserService {
     }
     return null;
   }
+
+  async updateRefreshToken(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { refreshToken });
+  }
+
+  // Tìm người dùng theo Refresh Token
+  async findByRefreshToken(refreshToken: string): Promise<User | null> {
+    return this.userModel.findOne({ refreshToken }).exec();
+  }
 }
