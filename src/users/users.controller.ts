@@ -13,7 +13,7 @@ export class UserController {
     const { username, password, role } = body;
 
     // Tạo người dùng mới
-    await this.userService.createUser(username, password, role || 'admin');
+    await this.userService.createUser(username, password, role || 'user');
     return { message: 'User registered successfully' };
   }
 }

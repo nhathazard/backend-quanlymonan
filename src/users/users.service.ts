@@ -11,7 +11,7 @@ export class UserService {
   async createUser(
     username: string,
     password: string,
-    role: string = 'admin',
+    role: string,
   ): Promise<User> {
     const existingUser = await this.userModel.findOne({ username }).exec();
     if (existingUser) {

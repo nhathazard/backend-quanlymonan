@@ -57,6 +57,8 @@ export class FoodService {
 
   // Xóa món ăn
   async deleteFood(id: string): Promise<void> {
+    console.log('id', id);
+
     const result = await this.foodModel.findByIdAndDelete(id).exec();
     if (!result) {
       throw new NotFoundException('Food not found');
